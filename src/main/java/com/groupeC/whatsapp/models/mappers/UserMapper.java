@@ -1,6 +1,7 @@
 package com.groupeC.whatsapp.models.mappers;
 
 import com.groupeC.whatsapp.models.dtos.requests.RegisterRequest;
+import com.groupeC.whatsapp.models.dtos.responses.ContactResponse;
 import com.groupeC.whatsapp.models.entities.User;
 import com.groupeC.whatsapp.models.enums.UserRole;
 import lombok.RequiredArgsConstructor;
@@ -24,7 +25,12 @@ public class UserMapper {
     }
 
     //fonction pour la convertion de l'entité vers le dtos n'est pas encore necessaire
-    public void  toDtos(User user){
-        //TODO
+    public ContactResponse toDtos(User user,boolean connected){
+        ContactResponse contactResponse=new ContactResponse();
+        contactResponse.setEmail(user.getEmail());
+        contactResponse.setName(user.getName());
+        contactResponse.setRole(user.getUserRole());
+        contactResponse.setConnected(connected);
+        return contactResponse;
     }
 }

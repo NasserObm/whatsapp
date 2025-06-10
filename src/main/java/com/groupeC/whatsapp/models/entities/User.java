@@ -5,9 +5,7 @@ import jakarta.persistence.*;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 
 @Entity
 @Table(name = "users")
@@ -22,10 +20,23 @@ public class User implements UserDetails {
     private String name;//Nom de l'utilisateur
     @Column(nullable = false)
     private String password;//mot de passe qui sera bien sur sécurisé dans authentifcationServiceImpl
+    @Column(name = "is_connected")
+    private boolean connected;
+
 
     //Enumeration de l'utilisateur
     @Enumerated(EnumType.STRING)
     private UserRole userRole;//indique le role de l'utilisateur
+
+    //Relation avec d'autres objets
+    @ManyToMany
+    @JoinTable(
+            name = "user_contacts",
+            joinColumns = @JoinColumn(name = "user_id"),
+            inverseJoinColumns = @JoinColumn(name = "contact_id")
+    )
+    private Set<User> contacts = new HashSet<>();
+
 
     //Implémentation des constructeurs
     public User(Long id, String email, String name, String password, UserRole userRole) {
@@ -40,6 +51,14 @@ public class User implements UserDetails {
     }
 
     //implementation des getters et des setters
+
+    public boolean isConnected() {
+        return connected;
+    }
+
+    public void setConnected(boolean connected) {
+        this.connected = connected;
+    }
 
     public Long getId() {
         return id;
@@ -74,6 +93,14 @@ public class User implements UserDetails {
 
     public void setName(String name) {
         this.name = name;
+    }
+
+    public Set<User> getContacts() {
+        return contacts;
+    }
+
+    public void setContacts(Set<User> contacts) {
+        this.contacts = contacts;
     }
 
     //Implementation du UserDetail

@@ -40,6 +40,7 @@ public class MessageController {
     ) {
         return ResponseEntity.ok(messageService.getConversation(user2));
     }
+/*
     @GetMapping("/unread")
     public ResponseEntity<List<MessageResponse>> getUnreadMessages(
             @RequestHeader("Authorization") String token) {
@@ -52,5 +53,5 @@ public class MessageController {
         messageService.markAsSeen(id);
         return ResponseEntity.ok("Vu !");
     }
-
+*/
 }
