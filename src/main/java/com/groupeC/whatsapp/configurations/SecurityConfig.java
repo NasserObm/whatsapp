@@ -55,15 +55,19 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(List.of("http://localhost:4200")); // Origine autorisée (Angular)
-        configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS")); // Méthodes autorisées
-        configuration.setAllowedHeaders(List.of("*")); // Tous les headers autorisés
-        configuration.setAllowCredentials(true); // Si tu envoies des cookies ou tokens
+        configuration.setAllowedOrigins(List.of(
+                "https://smstech.esiitech-gabon.com",
+                "https://api-smstech.esiitech-gabon.com"
+        ));
+        configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        configuration.setAllowedHeaders(List.of("*"));
+        configuration.setAllowCredentials(true);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        source.registerCorsConfiguration("/**", configuration); // Appliquer à toutes les routes
+        source.registerCorsConfiguration("/**", configuration);
         return source;
     }
+
     //Gestion de la connexion
     @Bean
     public AuthenticationProvider authenticationProvider(){

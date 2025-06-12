@@ -7,7 +7,7 @@ services:
       POSTGRES_PASSWORD: 1234
       POSTGRES_DB: sms_db
     ports:
-      - "5439:5432"
+      - "5439:5432"   # port hôte : port conteneur
     volumes:
       - db-data:/var/lib/postgresql/data
     networks:
@@ -23,7 +23,7 @@ services:
     ports:
       - "9090:8080"
     environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5439/sms_db
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/sms_db  # <- ici port 5432 interne !
     networks:
       - sms-net
 
@@ -31,4 +31,4 @@ volumes:
   db-data:
 
 networks:
-  kazie-net:
+  sms-net:
