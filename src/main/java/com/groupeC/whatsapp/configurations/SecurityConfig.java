@@ -66,7 +66,8 @@ public class SecurityConfig {
                             "https://smstech.esiitech-gabon.com",
                             "https://api-smstech.esiitech-gabon.com",
                             "http://localhost:8080",
-                            "http://192.168.0.64:8080"
+                            "http://192.168.0.64:8080",
+                            "http://localhost:4200/"
                     ));
                     config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
                     config.setAllowedHeaders(List.of("*"));
