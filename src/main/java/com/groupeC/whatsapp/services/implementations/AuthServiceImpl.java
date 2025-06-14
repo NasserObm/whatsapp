@@ -25,9 +25,24 @@ public class AuthServiceImpl implements AuthService {
 
     //Implementation des methodes de l'interface
 
+    private boolean isPasswordStrong(String password) {
+        if (password == null) return false;
+        if (password.length() < 8) return false;
+
+        boolean hasUpper = password.chars().anyMatch(Character::isUpperCase);
+        boolean hasLower = password.chars().anyMatch(Character::isLowerCase);
+        boolean hasDigit = password.chars().anyMatch(Character::isDigit);
+        boolean hasSpecial = password.chars().anyMatch(ch -> "!@#$%^&*()_+-=[]{}|;:'\",.<>/?".indexOf(ch) >= 0);
+
+        return hasUpper && hasLower && hasDigit && hasSpecial;
+    }
+
     //fonction pour l'inscription d'un utilisateur
     @Override
     public AuthResponse register(RegisterRequest request) {
+        if (!isPasswordStrong(request.getPassword())) {
+            throw new IllegalArgumentException("Mot de passe trop faible : au moins 8 caractères, une majuscule, une minuscule, un chiffre et un caractère spécial sont requis.");
+        }
         User user = userMapper.toEntity(request);//récupération de l'élément de sorti de la methode toEntity dans la classe UserMapper
         userRepository.save(user);//sauvegarde en base de de donnée de l'utilisateur
 

@@ -28,63 +28,64 @@ public class MessageServiceImpl implements MessageService {
     private final MessageRepository messageRepository;
     private final SimpMessagingTemplate messagingTemplate;
     private final UserRepository userRepository;
+    private final CryptoService cryptoService;
+
     @Override
     public void sendMessage(MessageRequest messageRequest) {
-        String senderEmail = UserLogUtils.utilsConnecter(); // Email de l'utilisateur connecté
-
-        // Récupération de l'expéditeur
+        String senderEmail = UserLogUtils.utilsConnecter();
         User sender = userRepository.findByEmail(senderEmail)
                 .orElseThrow(() -> new ApiException("Utilisateur non reconnu"));
-
-        // Vérification du rôle
         if (!sender.getUserRole().equals(UserRole.USER)) {
             throw new ApiException("Action réservée aux utilisateurs");
         }
-
-        // Récupération du destinataire
         User receiver = userRepository.findByEmail(messageRequest.getReceiverEmail())
                 .orElseThrow(() -> new ApiException("Destinataire introuvable"));
 
-        // Création du message
-        Message message = messageMapper.toEntity(messageRequest, senderEmail);
-        messageRepository.save(message);
+        try {
+            String encryptedContent = cryptoService.encrypt(messageRequest.getContent());
+            MessageRequest encryptedMessageRequest = new MessageRequest();
+            encryptedMessageRequest.setReceiverEmail(messageRequest.getReceiverEmail());
+            encryptedMessageRequest.setContent(encryptedContent);
 
-        // 🔥 Ajout mutuel dans les contacts s'ils ne sont pas déjà liés
-        if (!sender.getContacts().contains(receiver)) {
-            sender.getContacts().add(receiver);
+            Message message = messageMapper.toEntity(encryptedMessageRequest, senderEmail);
+            messageRepository.save(message);
+
+            if (!sender.getContacts().contains(receiver)) sender.getContacts().add(receiver);
+            if (!receiver.getContacts().contains(sender)) receiver.getContacts().add(sender);
+            userRepository.save(sender);
+            userRepository.save(receiver);
+
+            messagingTemplate.convertAndSendToUser(
+                    receiver.getEmail(),
+                    "/queue/messages",
+                    encryptedMessageRequest
+            );
+        } catch (Exception e) {
+            throw new ApiException("Erreur lors du chiffrement du message");
         }
-        if (!receiver.getContacts().contains(sender)) {
-            receiver.getContacts().add(sender);
-        }
-
-        // Sauvegarder les deux utilisateurs mis à jour
-        userRepository.save(sender);
-        userRepository.save(receiver);
-
-        // 💬 Envoi du message via WebSocket
-        messagingTemplate.convertAndSendToUser(
-                receiver.getEmail(),
-                "/queue/messages",
-                messageRequest
-        );
     }
 
     @Override
     public List<MessageResponse> getConversation(String email2) {
-        String email1= UserLogUtils.utilsConnecter();//récupération de l'email
-        //Verification de l'existence du mail en db
-        User user= userRepository.findByEmail(email1).orElseThrow(
-                ()->new ApiException("Utilisateur non reconnu")
-        );
-        //Condition pour verifier le role de l'utilisateur
-        if (!user.getUserRole().equals(UserRole.USER)){
-            throw new ApiException("Action reservé au Utilisateur");
-        }
-        return messageRepository.findConversation(email1, email2)
-                .stream()
-                .map(messageMapper::toResponse)
-                .toList();
+        String email1 = UserLogUtils.utilsConnecter();
+        User user = userRepository.findByEmail(email1).orElseThrow(() -> new ApiException("Utilisateur non reconnu"));
+        if (!user.getUserRole().equals(UserRole.USER)) throw new ApiException("Action réservée aux utilisateurs");
+
+        List<Message> messages = messageRepository.findConversation(email1, email2);
+        return messages.stream()
+                .map(message -> {
+                    try {
+                        String decryptedContent = cryptoService.decrypt(message.getContent());
+                        MessageResponse response = messageMapper.toResponse(message);
+                        response.setContent(decryptedContent);
+                        return response;
+                    } catch (Exception e) {
+                        throw new RuntimeException("Erreur lors du déchiffrement");
+                    }
+                })
+                .collect(Collectors.toList());
     }
+
     public void markAsSeen(Long messageId) {
         Message message = messageRepository.findById(messageId)
                 .orElseThrow(() -> new RuntimeException("Message introuvable"));
